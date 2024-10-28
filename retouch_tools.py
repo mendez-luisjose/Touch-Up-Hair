@@ -23,7 +23,7 @@ def modify_hair() :
             #st.session_state.final_img = resp.content
             st.session_state.final_img = st.session_state.img_hair
 
-            return "Hair Modified Successfully ✅!"
+            return "Hair Modified Successfully!"
         else :
             return "Upload an Image!"
     except Timeout as e:
