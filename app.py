@@ -135,7 +135,7 @@ def get_agent_action(user_query) :
         message_placeholder.info(full_response)
 
         #if final_hair_img != None and ai_response == "Hair Modified Successfully!" :
-        if ai_response == "Hair Modified Successfully ✅!" :
+        if ai_response == "Hair Modified Successfully!" :
             progress_bar = st.progress(0)
 
             for perc_completed in range(100) :
