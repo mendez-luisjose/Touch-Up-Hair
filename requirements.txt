@@ -1,0 +1,10 @@
+﻿streamlit
+langchain-core
+langchain-groq
+langchain-community
+numpy
+pillow
+webcolors
+langchain
+langchain-google-genai
+pydantic
