@@ -44,10 +44,11 @@ def change_hair_color(hair_color) :
             hex_color_name = st.session_state.hex_color_name
 
             bytes_data = st.session_state.img_hair.getvalue()
-            resp = requests.post(API_URL_ENDPOINT, data={"inpaint_option": inpaint_option, "hair_color": hair_color, "automatic_hair_root_area": automatic_hair_root_area}, files={'file': bytes_data})
+            #resp = requests.post(API_URL_ENDPOINT, data={"inpaint_option": inpaint_option, "hair_color": hair_color, "automatic_hair_root_area": automatic_hair_root_area}, files={'file': bytes_data})
 
             #st.write(resp.content)
-            st.session_state.final_img = resp.content
+            #st.session_state.final_img = resp.content
+            st.session_state.final_img = st.session_state.img_hair
 
             return "Hair Modified Successfully!"
         else :
