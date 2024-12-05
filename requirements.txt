@@ -8,3 +8,7 @@ webcolors
 langchain
 langchain-google-genai
 pydantic
+deepgram-sdk
+audio-recorder-streamlit
+assemblyai
+uuid
