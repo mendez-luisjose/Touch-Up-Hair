@@ -8,6 +8,7 @@ from deepgram import (
     FileSource,
 )
 import requests
+import streamlit as st
 
 DEEPGRAM_URL = "https://api.deepgram.com/v1/speak?model=aura-luna-en"
 
