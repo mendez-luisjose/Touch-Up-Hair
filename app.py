@@ -8,7 +8,11 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_community.callbacks.streamlit import StreamlitCallbackHandler
 import numpy as np
 from PIL import Image, ImageColor
-from util import get_colour_name
+from util import get_colour_name, speech_to_text
+from audio_recorder_streamlit import audio_recorder
+from io import BytesIO
+import uuid
+from template import MESSAGE
 
 if "img_hair" not in st.session_state :
     st.session_state.img_hair = None  
@@ -34,6 +38,12 @@ if "automatic_hair_root_area" not in st.session_state :
 if "hex_color_name" not in st.session_state :
     st.session_state.hex_color_name = None
 
+if "speech_to_text_history" not in st.session_state :
+    st.session_state.speech_to_text_history = []
+
+if "audio_response" not in st.session_state :
+    st.session_state.audio_response = False
+
 HUGGINGFACEHUB_API_TOKEN = st.secrets["HUGGINGFACEHUB_API_TOKEN"]
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
@@ -44,23 +54,17 @@ os.environ["GROQ_API_KEY"] = GROQ_API_KEY
 img_file = None
 
 if "chat_history" not in st.session_state :
-    st.session_state.chat_history = [AIMessage(content="Hello! I'm a Chatbot assistant. Ask me anything about your Web Page URL or PDF Files."),]
+    st.session_state.chat_history = [AIMessage(content=MESSAGE),]
 
-st.set_page_config(page_title="LangChain App", page_icon="🦜", layout="wide")
+st.set_page_config(page_title="Touch-Up Hair", page_icon="💈", layout="wide")
 
 example_prompts = [
-    "Hello how are you?",
+    "How this app exactly works?",
     "What is your function?",
     "Tell me what you can do.",
-    "Do you have a name?"
+    "Is this app free to use?"
 ]
 
-example_prompts_help = [
-    "Example Message",
-    "Example Message",
-    "Example Message",
-    "Example Message"
-]
 
 def get_agent_response(user_query) :
     #st_callback = StreamlitCallbackHandler(st.container())
@@ -118,7 +122,7 @@ def get_agent_action(user_query) :
         st.markdown(user_query)
 
     with st.chat_message("assistant") :
-        with st.spinner("Generating Image 💇🏻...") :
+        with st.spinner("Generating Answer...") :
             ai_response = get_agent_response(user_query)
             
         message_placeholder = st.empty()
@@ -145,7 +149,25 @@ def get_agent_action(user_query) :
             _,  col_img, _ = st.columns([0.85, 1, 0.85])
             col_img.image(st.session_state.final_img, use_column_width=True)
             #col_img.image(st.session_state.img_hair, use_column_width=True)
-            col_img.button("Download Image", use_container_width=True, key=f"Button {str(st.session_state.hair_imgs_generated_count)}", icon="⏬")
+
+
+            #col_img.button("Download Image", use_container_width=True, key=f"Button {str(st.session_state.hair_imgs_generated_count)}", icon="⏬")
+
+            buf = BytesIO()
+            pillow_img = Image.open(BytesIO(st.session_state.final_img)).convert('RGB')
+            #pillow_img = Image.open(st.session_state.final_img).convert('RGB')
+            pillow_img.save(buf, format="JPEG")
+            byte_im = buf.getvalue()
+
+            col_img.download_button(
+                label="Download Image",
+                data=byte_im,
+                file_name='{}.jpeg'.format(uuid.uuid1()),
+                mime="image/jpeg",
+                icon="⏬",
+                use_container_width=True,
+                key=f"Button {str(st.session_state.hair_imgs_generated_count)}"
+                )  
 
             st.session_state.hair_imgs_dict[str(st.session_state.hair_imgs_generated_count)] = st.session_state.final_img
             st.session_state.hair_imgs_generated_count = st.session_state.hair_imgs_generated_count + 1
@@ -159,19 +181,30 @@ def main() :
     
     col_1.image("./imgs/7.png")
 
+    st.write(" ")
+    st.write(" ")
+
     with st.expander("📚 How to Use this LangChain Application"):
         st.subheader("🦜 What is LangChain?")
         st.write("LangChain is a framework for developing applications powered by large language models (LLMs). LangChain serves as a generic interface for nearly any LLM, providing a centralized development environment to build LLM applications and integrate them with external data sources and software workflows.")
+
         st.write("LangChain’s module-based approach allows developers and data scientists to dynamically compare different prompts and even different foundation models with minimal need to rewrite code. This modular environment also allows for programs that use multiple LLMs. ")
         st.info("LangChain can facilitate most use cases for LLMs and natural language processing (NLP), like chatbots, intelligent search, question-answering, summarization services or even virtual agents capable of robotic process automation.")
+        st.divider()
+        _, col3, col4, _ = st.columns([1, 1, 1, 1], gap="large", vertical_alignment="center")
+
+        col3.image("./imgs/img-prev-1.jpg", use_column_width=True, caption="Original Image 🖼️")
+        col4.image("./imgs/img-prev-result-1.jpeg", use_column_width=True, caption="ReTouch Hair 💈")
 
         st.divider()
+
 
         st.subheader("🐍 RAG Application")
         st.write("Retrieval augmented generation, or RAG, is an architectural approach that can improve the efficacy of large language model (LLM) applications by leveraging custom data. This is done by retrieving data/documents relevant to a question or task and providing them as context for the LLM. RAG has shown success in support chatbots and Q&A systems that need to maintain up-to-date information or access domain-specific knowledge.")
         st.caption("RAG Diagram Representation:")
         _,  col_2, _ = st.columns([0.4, 1, 0.4])
         col_2.image("./imgs/rag-with-llms-1.gif", use_column_width=True)
+        #col_2.image("./imgs/2.jpg", use_column_width=True)
         st.divider()
 
         st.markdown(
@@ -185,10 +218,16 @@ def main() :
         )
 
         st.divider()
+        _, col5, col6, _ = st.columns([1, 1, 1, 1], gap="large", vertical_alignment="center")
+
+        col5.image("./imgs/img-prev-2.jpg", use_column_width=True, caption="Original Image 🖼️")
+        col6.image("./imgs/img-prev-result-2.jpeg", use_column_width=True, caption="ReTouch Hair 💈")
+
 
     st.divider()
 
     with st.sidebar:     
+        st.sidebar.caption("🧑🏻‍💻 Hair ReTouch App Coded by [Luis Jose Mendez](https://github.com/rag-team)")
         st.info("**Start the RAG App ↓**", icon="👋🏾")
     
         with st.expander("🌐 Chatbot Application", expanded=True):
@@ -212,10 +251,15 @@ def main() :
 
             st.info("❗ It Can be Selected Only One Option at Time.")
             st.header("📍 Explore")
-            option = st.multiselect("Options:", ["ReTouch", "Tutorial"], default=["ReTouch"], max_selections=1)
+            st.caption(
+                """
+                Load the Chatbot with PDFs, CSV or URL and Asks Questions About it. \n
+                """
+            )
+            #option = st.multiselect("Options:", ["ReTouch", "Tutorial"], default=["ReTouch"], max_selections=1)
 
-        if len(option) !=0 :
-            option = option[0]
+        #if len(option) !=0 :
+            #option = option[0]
 
     st.caption("🚀 Powered by Llama-3, Gemini and LangChain")
     for index, message in enumerate(st.session_state.chat_history) :
@@ -232,9 +276,25 @@ def main() :
                     #col.image(st.session_state.img_hair, width=300)
 
                     col.image(st.session_state.hair_imgs_dict[str(agent_results)], use_column_width=True)
-                    col.button("Download Image", use_container_width=True, key=f"Button {str(agent_results)}", icon="⏬")
+                    #col.button("Download Image", use_container_width=True, key=f"Button {str(agent_results)}", icon="⏬")
+                    buf = BytesIO()
+                    pillow_img = Image.open(BytesIO(st.session_state.hair_imgs_dict[str(agent_results)])).convert('RGB')
+                    #pillow_img = Image.open(st.session_state.hair_imgs_dict[str(agent_results)]).convert('RGB')
+                    pillow_img.save(buf, format="JPEG")
+                    byte_im = buf.getvalue()
+
+                    col.download_button(
+                        label="Download Image",
+                        data=byte_im,
+                        file_name='{}.jpeg'.format(uuid.uuid1()),
+                        mime="image/jpeg",
+                        icon="⏬",
+                        use_container_width=True,
+                        key=f"Button {str(agent_results)}"
+                        )  
 
                     agent_results =  agent_results + 1
+
 
 
     #st.write(st.session_state.chat_history)
@@ -244,49 +304,93 @@ def main() :
 
     user_query = ""
 
-    if button_cols[0].button(example_prompts[0], help=example_prompts_help[0], key="Boton1", use_container_width=True, on_click=None):
+    if button_cols[0].button(example_prompts[0], help="Prompt Example", key="Boton1", use_container_width=True, on_click=None):
         user_query = example_prompts[0]
-        response_action(user_query)
-    elif button_cols[1].button(example_prompts[1], help=example_prompts_help[1], key="Boton2", use_container_width=True, on_click=None):
+        #response_action(user_query)
+        get_agent_action(user_query)
+    elif button_cols[1].button(example_prompts[1], help="Prompt Example", key="Boton2", use_container_width=True, on_click=None):
         user_query = example_prompts[1]
-        response_action(user_query)
-    elif button_cols[2].button(example_prompts[2], help=example_prompts_help[2], key="Boton3", use_container_width=True, on_click=None):
+        get_agent_action(user_query)
+    elif button_cols[2].button(example_prompts[2], help="Prompt Example", key="Boton3", use_container_width=True, on_click=None):
         user_query = example_prompts[2]
-        response_action(user_query)
-    elif button_cols[3].button(example_prompts[3], help=example_prompts_help[3], key="Boton4", use_container_width=True, on_click=None):
+        get_agent_action(user_query)
+    elif button_cols[3].button(example_prompts[3], help="Prompt Example", key="Boton4", use_container_width=True, on_click=None):
         user_query = example_prompts[3]
-        response_action(user_query)
+        get_agent_action(user_query)
 
-    if option == "ReTouch" :
-        with st.sidebar.expander("ReTouch Settings", icon="⚙️") :
-            st.caption("Try this features for better results.")
-            automatic_hair_root_area = st.checkbox("Automatic Selection of the Hair Root Area", value=True, help="Try this feature for better results.")
-            st.warning("This option may or may not perform better in some images.")
-            st.divider()
-            col1, col2 = st.columns([1, 0.3], vertical_alignment="center", gap="medium")
-            col1.info("Select a specific color code for the hair.")
-            hex_code_color = col2.color_picker("Picker:")
+    with st.sidebar.expander("ReTouch Settings", icon="⚙️") :
+        camera_photo = None
+        enable = st.checkbox("Take a Live Photo with your Camera", value=False, help="Check this box to enable the camera.")
+
+        st.session_state.audio_response = st.checkbox("AI Voice Response", value=False, help="Check this box to enable AI Audio Response.")
+        st.caption("Try this features for better results.")
+        automatic_hair_root_area = st.checkbox("Automatic Selection of the Hair Root Area", value=True, help="Try this feature for better results.")
+        st.warning("This option may or may not perform better in some images.")
+
+        st.divider()
+
+        col1, col2 = st.columns([1, 0.3], vertical_alignment="center", gap="medium")
+        col1.info("Select a specific color code for the hair.")
+        hex_code_color = col2.color_picker("Picker:")
+        
+        rgb_code_color = ImageColor.getcolor(hex_code_color, "RGB")
+        actual_name, closest_name = get_colour_name(rgb_code_color)
+
+        if (actual_name == None) :
+            hair_color = (closest_name + '.')[:-1]
+        elif (actual_name != None) :
+            hair_color = (actual_name + '.')[:-1]
+
+        st.session_state.automatic_hair_root_area = automatic_hair_root_area
+        st.session_state.hex_color_name = hair_color
+
+        st.divider()
+        chat_with_voice = st.checkbox("Talk with your Voice 🎙️", value=False)
+        st.warning("Speak very Clearly to the Microphone. To Record your Voice press the Microphone Icon.")
+
+        if chat_with_voice :
+            footer_container = st.container()
+            with footer_container:
+                audio_bytes = audio_recorder(text="🔊 Activate Microphone", icon_size="2x")
+                
+                if (audio_bytes != None) and (chat_with_voice) :
+                    with st.spinner("Transcribing..."):
+                        webm_file_path = "./temp/temp_audio.mp3"
+                        with open(webm_file_path, "wb") as f:
+                            f.write(audio_bytes)
+
+                        transcript = speech_to_text(webm_file_path)
+                        if transcript!="Error" and transcript!= None:
+                            st.session_state.speech_to_text_history.append(transcript)
+                            os.remove(webm_file_path)
+
+        elif chat_with_voice!=True :
+            st.session_state.speech_to_text_history = []
+
+    if enable :
+        camera_photo = st.camera_input(" ")
+
+    with st.sidebar.expander("📚 Upload Image", expanded=True) :
+        img_file = st.file_uploader("Upload PDF Files:", type=["jpg", "png", "jpeg"], accept_multiple_files=False)
+
+    if img_file is None and enable is False :
+        st.divider()
+        st.info("🖼️ Please Load an Image.")
+    elif camera_photo is not None or img_file is not None :
+        if camera_photo is not None :
+            image = np.array(Image.open(camera_photo))
             
-            rgb_code_color = ImageColor.getcolor(hex_code_color, "RGB")
-            actual_name, closest_name = get_colour_name(rgb_code_color)
+            with st.sidebar.expander("🖼️ Image Preview:", expanded=True) :
+                #st.success(" Image Loaded Correctly!", icon="✅")
+                _,  img_preview, _ = st.columns([0.5, 1, 0.5])
+                #col.image(final_hair_img, use_column_width=True, width=300)
+                img_preview.image(image, use_column_width=True)
+                #st.image(image, width=200)
 
-            if (actual_name == None) :
-                hair_color = (closest_name + '.')[:-1]
-            elif (actual_name != None) :
-                hair_color = (actual_name + '.')[:-1]
-
-            st.session_state.automatic_hair_root_area = automatic_hair_root_area
-            st.session_state.hex_color_name = hair_color
-
-
-        with st.sidebar.expander("📚 RAG Option", expanded=True) :
-            img_file = st.file_uploader("Upload PDF Files:", type=["jpg", "png", "jpeg"], accept_multiple_files=False)
-
-        if img_file is None :
-            st.divider()
-            st.info("🖼️ Please Load an Image.")
+            st.session_state.img_hair = camera_photo
         elif img_file is not None :
             image = np.array(Image.open(img_file))
+            
             with st.sidebar.expander("🖼️ Image Preview:", expanded=True) :
                 #st.success(" Image Loaded Correctly!", icon="✅")
                 _,  img_preview, _ = st.columns([0.5, 1, 0.5])
@@ -296,23 +400,32 @@ def main() :
 
             st.session_state.img_hair = img_file
 
-            from ai_agent import initialize_agent
-            from ai_tools import re_tools
 
-            agent = initialize_agent(tools=re_tools)
+        from ai_agent import initialize_agent
+        from ai_tools import re_tools
 
-            st.session_state.agent = agent 
+        agent = initialize_agent(tools=re_tools)
 
-            user_query = st.chat_input("Type your message here...")
-            
-            if user_query is not None and user_query != "":
-                get_agent_action(user_query)
+        st.session_state.agent = agent 
 
-    elif option == "Conversation" :
         user_query = st.chat_input("Type your message here...")
+        
+        if (user_query is not None and user_query != "") and (chat_with_voice!=True) :
+            get_agent_action(user_query)
+        elif (chat_with_voice) and (len(st.session_state.speech_to_text_history) > 0):
+            user_query = st.session_state.speech_to_text_history[-1]
+            get_agent_action(user_query)
+
+
+    #elif option == "Conversation" :
+        #user_query = st.chat_input("Type your message here...")
             
-        if user_query is not None and user_query != "":
-            response_action(user_query)
+        #if user_query is not None and user_query != "" and (chat_with_voice!=True):
+            #response_action(user_query)
+
+    #if enable :
+        #st.session_state.camera_photo = st.camera_input(" ")
+        #st.session_state.use_camera = True
         
 if __name__ == "__main__" :
     main()
