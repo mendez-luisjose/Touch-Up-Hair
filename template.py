@@ -54,11 +54,11 @@ PROMPT_TEMPLATE = """
 """
 
 MESSAGE = """
-Hello! Give me an Image and with your prompt I will modify the hair of that person.
+¿Hola como estas? Dame la foto de una persona y dime que modificacion al cabello le quieres realizar.
 
-#### 💈 Prompt Examples:
-- **Hair Color:** Change the color of the hair to red.
-- **Hair Roots:** Modify the hair roots of the image.
-- **Style:** Modify the hair style of the image to punk
-- **Freestyle:** Change the hair to a rock red style
+#### 💈 Ejemplos de Prompt:
+- **Cambio de Color de Cabello:** Cambia el color del pelo a rojo.
+- **Raices:** Modifica las raices del cabello.
+- **Estilo:** Cambia el estilo del cabello a uno Punk.
+- **Freestyle:** Modifica el cabello a uno Rockstar de color azul.
 """
