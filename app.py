@@ -13,6 +13,7 @@ from audio_recorder_streamlit import audio_recorder
 from io import BytesIO
 import uuid
 from template import MESSAGE
+import requests
 
 if "img_hair" not in st.session_state :
     st.session_state.img_hair = None  
@@ -371,7 +372,7 @@ def main() :
                 #st.success(" Image Loaded Correctly!", icon="✅")
                 _,  img_preview, _ = st.columns([0.5, 1, 0.5])
                 #col.image(final_hair_img, use_column_width=True, width=300)
-                img_preview.image(image, use_column_width=True)
+                img_preview.image(image, use_container_width=True)
                 #st.image(image, width=200)
 
             st.session_state.img_hair = camera_photo
