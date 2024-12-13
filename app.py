@@ -140,7 +140,7 @@ def get_agent_action(user_query) :
                 progress_bar.progress(perc_completed+1)
                 
             _,  col_img, _ = st.columns([0.85, 1, 0.85])
-            col_img.image(st.session_state.final_img, use_column_width=True)
+            col_img.image(st.session_state.final_img, use_container_width=True)
             #col_img.image(st.session_state.img_hair, use_column_width=True)
 
 
@@ -185,8 +185,8 @@ def main() :
         st.divider()
         _, col3, col4, _ = st.columns([1, 1, 1, 1], gap="large", vertical_alignment="center")
 
-        col3.image("./imgs/img-prev-1.jpg", use_column_width=True, caption="Imagen Original 🖼️")
-        col4.image("./imgs/img-prev-result-1.jpeg", use_column_width=True, caption="Imagen Generada💈")
+        col3.image("./imgs/img-prev-1.jpg", use_container_width=True, caption="Imagen Original 🖼️")
+        col4.image("./imgs/img-prev-result-1.jpeg", use_container_width=True, caption="Imagen Generada💈")
 
         st.divider()
 
@@ -195,7 +195,7 @@ def main() :
         st.write("La tecnologia para poder editar la imagen original del cabello se llama Stable Diffusion, especificamente se esta utilizando el modelo de Inpaint de Realistic Vision. Asi gracias al prompt del usuario, y las capas de redes neuronales convolucionales y las capas de Encoder y Decoder, se logra producir la nueva imagen.")
         st.caption("Diagrama de Stable Diffusion:")
         _,  col_2, _ = st.columns([0.4, 1, 0.4])
-        col_2.image("./imgs/stable-diffusion-unet-steps.png", use_column_width=True)
+        col_2.image("./imgs/stable-diffusion-unet-steps.png", use_container_width=True)
         #col_2.image("./imgs/2.jpg", use_column_width=True)
         st.divider()
 
@@ -212,8 +212,8 @@ def main() :
         st.divider()
         _, col5, col6, _ = st.columns([1, 1, 1, 1], gap="large", vertical_alignment="center")
 
-        col5.image("./imgs/img-prev-2.jpg", use_column_width=True, caption="Imagen Original 🖼️")
-        col6.image("./imgs/img-prev-result-2.jpeg", use_column_width=True, caption="Imagen Generada 💈")
+        col5.image("./imgs/img-prev-2.jpg", use_container_width=True, caption="Imagen Original 🖼️")
+        col6.image("./imgs/img-prev-result-2.jpeg", use_container_width=True, caption="Imagen Generada 💈")
 
 
     st.divider()
@@ -263,7 +263,7 @@ def main() :
                     #col.image(final_hair_img, use_column_width=True, width=300)
                     #col.image(st.session_state.img_hair, width=300)
 
-                    col.image(st.session_state.hair_imgs_dict[str(agent_results)], use_column_width=True)
+                    col.image(st.session_state.hair_imgs_dict[str(agent_results)], use_container_width=True)
                     #col.button("Download Image", use_container_width=True, key=f"Button {str(agent_results)}", icon="⏬")
                     buf = BytesIO()
                     pillow_img = Image.open(BytesIO(st.session_state.hair_imgs_dict[str(agent_results)])).convert('RGB')
@@ -383,7 +383,7 @@ def main() :
                 #st.success(" Image Loaded Correctly!", icon="✅")
                 _,  img_preview, _ = st.columns([0.5, 1, 0.5])
                 #col.image(final_hair_img, use_column_width=True, width=300)
-                img_preview.image(image, use_column_width=True)
+                img_preview.image(image, use_container_width=True)
                 #st.image(image, width=200)
 
             st.session_state.img_hair = img_file
