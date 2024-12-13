@@ -47,6 +47,7 @@ if "audio_response" not in st.session_state :
 HUGGINGFACEHUB_API_TOKEN = st.secrets["HUGGINGFACEHUB_API_TOKEN"]
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
+API_TRANSLATION = st.secrets["API_TRANSLATION"]
 
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY
@@ -59,61 +60,52 @@ if "chat_history" not in st.session_state :
 st.set_page_config(page_title="Touch-Up Hair", page_icon="💈", layout="wide")
 
 example_prompts = [
-    "How this app exactly works?",
-    "What is your function?",
-    "Tell me what you can do.",
-    "Is this app free to use?"
+    "¿Cómo funciona esta aplicación?",
+    "¿Cual es tu función?",
+    "Dime qué puedes hacer.",
+    "¿Esta App es de uso gratuito?"
 ]
+
+def get_es_to_en(text) :
+    data = {
+        "text": text,
+        "dest": "en",
+        "src": "es"
+    }
+    
+    resp = requests.post(API_TRANSLATION, json=data)
+
+    translation = resp.json()["trans"]
+
+    return translation
+
+def get_en_to_es(text) :
+    data = {
+        "text": text,
+        "dest": "es",
+        "src": "en"
+    }
+    
+    resp = requests.post(API_TRANSLATION, json=data)
+
+    translation = resp.json()["trans"]
+
+    return translation
 
 
 def get_agent_response(user_query) :
     #st_callback = StreamlitCallbackHandler(st.container())
+
+    transcription_en = get_es_to_en(user_query)
+
+
     result = st.session_state.agent.invoke(
-        {"input": user_query}, config={"configurable": {"session_id": "<foo>"}})
+        {"input": transcription_en}, config={"configurable": {"session_id": "<foo>"}})
     result = result["output"]
-    return result
 
-def get_chatbot_simple_response(user_query, chat_history ) :
-    template = """
-    You are a helpful assistant. Answer the following questions considering the history of the conversation:
+    transcription_es = get_en_to_es(result)
 
-    Chat history: {chat_history}
-
-    User question: {user_question}
-    """
-
-    prompt = ChatPromptTemplate.from_template(template)
-
-    llm = ChatGroq(model="llama3-8b-8192", temperature=0.3, api_key=GROQ_API_KEY)
-
-    chain = prompt | llm | StrOutputParser()
-    
-    return chain.invoke({
-        "chat_history": chat_history,
-        "user_question": user_query,
-    })
-    
-def response_action(user_message) :
-    st.session_state.chat_history.append(HumanMessage(content=user_message))
-    with st.chat_message("user") :
-        st.markdown(user_message)
-
-    with st.chat_message("assistant") :
-        ai_response = get_chatbot_simple_response(user_message, st.session_state.chat_history)
-        message_placeholder = st.empty()
-        full_response = ""
-        # Simulate a streaming response with a slight delay
-        for chunk in ai_response.split():
-            full_response += chunk + " "
-            time.sleep(0.05)
-
-            # Add a blinking cursor to simulate typing
-            message_placeholder.markdown(full_response + "▌")
-        
-        # Display the full response
-        message_placeholder.info(full_response)
-
-        st.session_state.chat_history.append(AIMessage(content=ai_response))
+    return transcription_es
 
 def get_agent_action(user_query) :
     st.session_state.chat_history.append(HumanMessage(content=user_query))
@@ -122,7 +114,7 @@ def get_agent_action(user_query) :
         st.markdown(user_query)
 
     with st.chat_message("assistant") :
-        with st.spinner("Generating Answer...") :
+        with st.spinner("Generando Respuesta...") :
             ai_response = get_agent_response(user_query)
             
         message_placeholder = st.empty()
@@ -139,7 +131,7 @@ def get_agent_action(user_query) :
         message_placeholder.info(full_response)
 
         #if final_hair_img != None and ai_response == "Hair Modified Successfully!" :
-        if ai_response == "Hair Modified Successfully!" :
+        if ai_response == "¡Cabello modificado con éxito!" :
             progress_bar = st.progress(0)
 
             for perc_completed in range(100) :
@@ -160,7 +152,7 @@ def get_agent_action(user_query) :
             byte_im = buf.getvalue()
 
             col_img.download_button(
-                label="Download Image",
+                label="Descargar Imagen",
                 data=byte_im,
                 file_name='{}.jpeg'.format(uuid.uuid1()),
                 mime="image/jpeg",
@@ -184,76 +176,71 @@ def main() :
     st.write(" ")
     st.write(" ")
 
-    with st.expander("📚 How to Use this LangChain Application"):
-        st.subheader("🦜 What is LangChain?")
-        st.write("LangChain is a framework for developing applications powered by large language models (LLMs). LangChain serves as a generic interface for nearly any LLM, providing a centralized development environment to build LLM applications and integrate them with external data sources and software workflows.")
-
-        st.write("LangChain’s module-based approach allows developers and data scientists to dynamically compare different prompts and even different foundation models with minimal need to rewrite code. This modular environment also allows for programs that use multiple LLMs. ")
-        st.info("LangChain can facilitate most use cases for LLMs and natural language processing (NLP), like chatbots, intelligent search, question-answering, summarization services or even virtual agents capable of robotic process automation.")
+    with st.expander("🌐 ¿En que Consiste y como Utilizar esta Aplicacion?"):
+        st.subheader("🦜 ¿En que Consiste esta Aplicacion?")
+        st.write("La presente aplicacion consiste en un app que permite mediante la utilizacion de LangChain, poder modificar el cabello de una persona usando un ChatBot facil e interactivo con el usuario.")
+        st.write("La tecnologia que se utiliza para el ChatBot se llama LangChain, en el cual es un marco para desarrollar aplicaciones basadas en modelos de lenguaje de gran tamaño (LLM). LangChain funciona como una interfaz genérica para casi cualquier LLM, brindando un entorno de desarrollo centralizado para crear aplicaciones LLM e integrarlas con fuentes de datos externas y flujos de trabajo de software. ")
+        st.info("Para poder realizar la modificacion del cabello, solamente hace falta subir la fota en la barra lateral y decirle al ChatBot los cambios que se quieren realizar, como retocar las raices o cambiar el color del pelo a cualquier color.")
         st.divider()
         _, col3, col4, _ = st.columns([1, 1, 1, 1], gap="large", vertical_alignment="center")
 
-        col3.image("./imgs/img-prev-1.jpg", use_column_width=True, caption="Original Image 🖼️")
-        col4.image("./imgs/img-prev-result-1.jpeg", use_column_width=True, caption="ReTouch Hair 💈")
+        col3.image("./imgs/img-prev-1.jpg", use_column_width=True, caption="Imagen Original 🖼️")
+        col4.image("./imgs/img-prev-result-1.jpeg", use_column_width=True, caption="Imagen Generada💈")
 
         st.divider()
 
 
-        st.subheader("🐍 RAG Application")
-        st.write("Retrieval augmented generation, or RAG, is an architectural approach that can improve the efficacy of large language model (LLM) applications by leveraging custom data. This is done by retrieving data/documents relevant to a question or task and providing them as context for the LLM. RAG has shown success in support chatbots and Q&A systems that need to maintain up-to-date information or access domain-specific knowledge.")
-        st.caption("RAG Diagram Representation:")
+        st.subheader("🖥️ Tecnologia Stable Diffusion")
+        st.write("La tecnologia para poder editar la imagen original del cabello se llama Stable Diffusion, especificamente se esta utilizando el modelo de Inpaint de Realistic Vision. Asi gracias al prompt del usuario, y las capas de redes neuronales convolucionales y las capas de Encoder y Decoder, se logra producir la nueva imagen.")
+        st.caption("Diagrama de Stable Diffusion:")
         _,  col_2, _ = st.columns([0.4, 1, 0.4])
-        col_2.image("./imgs/rag-with-llms-1.gif", use_column_width=True)
+        col_2.image("./imgs/stable-diffusion-unet-steps.png", use_column_width=True)
         #col_2.image("./imgs/2.jpg", use_column_width=True)
         st.divider()
 
         st.markdown(
             """
-            LangChain simplifies every stage of the LLM application lifecycle:
+            Estas son todas las modificaciones que el usuario puede realizar:
             
-            - Development: Build your applications using LangChain's open-source building blocks, components, and third-party integrations. Use LangGraph to build stateful agents with first-class streaming and human-in-the-loop support.
-            - Productionization: Use LangSmith to inspect, monitor and evaluate your chains, so that you can continuously optimize and deploy with confidence.
-            - Deployment: Turn your LangGraph applications into production-ready APIs and Assistants with LangGraph Cloud.
+            - Cambiar el color del Cabello: El usuario puede modificar el color del cabello a cualquier otro color con solo decirle al ChatBot.
+            - Retoque de Raices: Se puede modificar las raices que no estan del mismo color del pelo tiñado o descolorado, para asi que todo el cabello poseea un mismo color.
+            - Estilos: Se puede cambiar el estilo o la apariencia del cabello y el color de la persona.
             """
         )
 
         st.divider()
         _, col5, col6, _ = st.columns([1, 1, 1, 1], gap="large", vertical_alignment="center")
 
-        col5.image("./imgs/img-prev-2.jpg", use_column_width=True, caption="Original Image 🖼️")
-        col6.image("./imgs/img-prev-result-2.jpeg", use_column_width=True, caption="ReTouch Hair 💈")
+        col5.image("./imgs/img-prev-2.jpg", use_column_width=True, caption="Imagen Original 🖼️")
+        col6.image("./imgs/img-prev-result-2.jpeg", use_column_width=True, caption="Imagen Generada 💈")
 
 
     st.divider()
 
     with st.sidebar:     
-        st.sidebar.caption("🧑🏻‍💻 Hair ReTouch App Coded by [Luis Jose Mendez](https://github.com/rag-team)")
-        st.info("**Start the RAG App ↓**", icon="👋🏾")
+        st.sidebar.caption("🧑🏻‍💻 App de Retoque de Cabello Programada por [Luis Jose Mendez](https://github.com/mendez-luisjose)")
+        st.info("**Comienza a Usar la App ↓**", icon="👋🏻")
     
-        with st.expander("🌐 Chatbot Application", expanded=True):
-            st.title("🦜 Agent with LangChain")
+        with st.expander("🌐 Aplicacion ReTouch", expanded=True):
+            st.title("🦜 Agente con LangChain")
             #st.divider()
-            st.caption("📚 Load the Chatbot with PDFs, CSV or URL")
+            st.caption("🖼️ Carga las Imagenes que quieras Modificar.")
             #st.divider()
-            st.success("RAG LangChain Chatbot with PDFs and URLs.")
+            st.success("Imagenes Compatibles como PNG, JPG o JPEG")
 
             st.divider()
 
             st.write(
                 """
-                Load the Chatbot with PDFs, CSV or URL and Asks Questions About it. \n
+                Recuerda cargar primero la Imagen para que el Chatbot puede iniciar. \n
                 """
             )
 
-            #st.success("RAG LangChain Chatbot with PDFs and URLs.")
-
-            
-
-            st.info("❗ It Can be Selected Only One Option at Time.")
-            st.header("📍 Explore")
+            st.info("❗Solo se puede cargar una Imagen a la vez.")
+            st.header("📍 Explora")
             st.caption(
                 """
-                Load the Chatbot with PDFs, CSV or URL and Asks Questions About it. \n
+                Puedes realizar desde ajuste de raices, cambio de color del cabello o modificar el estilo del pelo. \n
                 """
             )
             #option = st.multiselect("Options:", ["ReTouch", "Tutorial"], default=["ReTouch"], max_selections=1)
@@ -261,7 +248,7 @@ def main() :
         #if len(option) !=0 :
             #option = option[0]
 
-    st.caption("🚀 Powered by Llama-3, Gemini and LangChain")
+    st.caption("🚀 Alimentado con Stable Diffusion, Gemini y LangChain")
     for index, message in enumerate(st.session_state.chat_history) :
         if isinstance(message, HumanMessage) :
             with st.chat_message("user") :
@@ -269,7 +256,7 @@ def main() :
         else :
             with st.chat_message("assistant") :
                 st.markdown(message.content)
-                if len(st.session_state.hair_imgs_dict) !=  0 and message.content == "Hair Modified Successfully!" :
+                if len(st.session_state.hair_imgs_dict) !=  0 and message.content == "¡Cabello modificado con éxito!" :
                     #for i in range(0, len(st.session_state.hair_imgs_list)) :
                     _,  col, _ = st.columns([0.85, 1, 0.85])
                     #col.image(final_hair_img, use_column_width=True, width=300)
@@ -284,7 +271,7 @@ def main() :
                     byte_im = buf.getvalue()
 
                     col.download_button(
-                        label="Download Image",
+                        label="Descargar Imagen",
                         data=byte_im,
                         file_name='{}.jpeg'.format(uuid.uuid1()),
                         mime="image/jpeg",
@@ -304,34 +291,34 @@ def main() :
 
     user_query = ""
 
-    if button_cols[0].button(example_prompts[0], help="Prompt Example", key="Boton1", use_container_width=True, on_click=None):
+    if button_cols[0].button(example_prompts[0], help="Ejemplo de Prompt", key="Boton1", use_container_width=True, on_click=None):
         user_query = example_prompts[0]
         #response_action(user_query)
         get_agent_action(user_query)
-    elif button_cols[1].button(example_prompts[1], help="Prompt Example", key="Boton2", use_container_width=True, on_click=None):
+    elif button_cols[1].button(example_prompts[1], help="Ejemplo de Prompt", key="Boton2", use_container_width=True, on_click=None):
         user_query = example_prompts[1]
         get_agent_action(user_query)
-    elif button_cols[2].button(example_prompts[2], help="Prompt Example", key="Boton3", use_container_width=True, on_click=None):
+    elif button_cols[2].button(example_prompts[2], help="Ejemplo de Prompt", key="Boton3", use_container_width=True, on_click=None):
         user_query = example_prompts[2]
         get_agent_action(user_query)
-    elif button_cols[3].button(example_prompts[3], help="Prompt Example", key="Boton4", use_container_width=True, on_click=None):
+    elif button_cols[3].button(example_prompts[3], help="Ejemplo de Prompt", key="Boton4", use_container_width=True, on_click=None):
         user_query = example_prompts[3]
         get_agent_action(user_query)
 
-    with st.sidebar.expander("ReTouch Settings", icon="⚙️") :
+    with st.sidebar.expander("Configuracion ReTouch", icon="⚙️") :
         camera_photo = None
-        enable = st.checkbox("Take a Live Photo with your Camera", value=False, help="Check this box to enable the camera.")
+        enable = st.checkbox("Toma una Foto con tu Camara", value=False, help="Habilita esta casilla para acceder a la camara.")
 
-        st.session_state.audio_response = st.checkbox("AI Voice Response", value=False, help="Check this box to enable AI Audio Response.")
-        st.caption("Try this features for better results.")
-        automatic_hair_root_area = st.checkbox("Automatic Selection of the Hair Root Area", value=True, help="Try this feature for better results.")
-        st.warning("This option may or may not perform better in some images.")
+        st.session_state.audio_response = st.checkbox("Respuesta con Voz IA", value=False, help="Habilita esta casilla para respuesta con voz.")
+        st.caption("Prueba esta opcion experimental para mejores resultados.")
+        automatic_hair_root_area = st.checkbox("Seleccion Automatica del Area del Cabello", value=True, help="Prueba esta opcion experimental.")
+        st.warning("Recuerda que esta opcion es experimental y puede resultar peor o mejor dependiendo de la imagen.")
 
         st.divider()
 
         col1, col2 = st.columns([1, 0.3], vertical_alignment="center", gap="medium")
-        col1.info("Select a specific color code for the hair.")
-        hex_code_color = col2.color_picker("Picker:")
+        col1.info("Selecciona un codigo de color de cabello especifico.")
+        hex_code_color = col2.color_picker("Escoge:")
         
         rgb_code_color = ImageColor.getcolor(hex_code_color, "RGB")
         actual_name, closest_name = get_colour_name(rgb_code_color)
@@ -345,16 +332,16 @@ def main() :
         st.session_state.hex_color_name = hair_color
 
         st.divider()
-        chat_with_voice = st.checkbox("Talk with your Voice 🎙️", value=False)
-        st.warning("Speak very Clearly to the Microphone. To Record your Voice press the Microphone Icon.")
+        chat_with_voice = st.checkbox("Activa el Microfono 🎙️", value=False)
+        st.warning("Habla con claridad al Microfono. Para grabar presiona el Icono del Microfono.")
 
         if chat_with_voice :
             footer_container = st.container()
             with footer_container:
-                audio_bytes = audio_recorder(text="🔊 Activate Microphone", icon_size="2x")
+                audio_bytes = audio_recorder(text="🔊 Presiona para Activar Microfono.", icon_size="2x")
                 
                 if (audio_bytes != None) and (chat_with_voice) :
-                    with st.spinner("Transcribing..."):
+                    with st.spinner("Escuchando..."):
                         webm_file_path = "./temp/temp_audio.mp3"
                         with open(webm_file_path, "wb") as f:
                             f.write(audio_bytes)
@@ -370,17 +357,17 @@ def main() :
     if enable :
         camera_photo = st.camera_input(" ")
 
-    with st.sidebar.expander("📚 Upload Image", expanded=True) :
-        img_file = st.file_uploader("Upload PDF Files:", type=["jpg", "png", "jpeg"], accept_multiple_files=False)
+    with st.sidebar.expander("🖼️ Carga tu Foto", expanded=True) :
+        img_file = st.file_uploader("Sube tu Imagen:", type=["jpg", "png", "jpeg"], accept_multiple_files=False)
 
     if img_file is None and enable is False :
         st.divider()
-        st.info("🖼️ Please Load an Image.")
+        st.info("🖼️ Por favor subir una Foto primero para empezar a interactuar con el ChatBot.")
     elif camera_photo is not None or img_file is not None :
         if camera_photo is not None :
             image = np.array(Image.open(camera_photo))
             
-            with st.sidebar.expander("🖼️ Image Preview:", expanded=True) :
+            with st.sidebar.expander("🖼️ Preview:", expanded=True) :
                 #st.success(" Image Loaded Correctly!", icon="✅")
                 _,  img_preview, _ = st.columns([0.5, 1, 0.5])
                 #col.image(final_hair_img, use_column_width=True, width=300)
@@ -391,7 +378,7 @@ def main() :
         elif img_file is not None :
             image = np.array(Image.open(img_file))
             
-            with st.sidebar.expander("🖼️ Image Preview:", expanded=True) :
+            with st.sidebar.expander("🖼️ Preview:", expanded=True) :
                 #st.success(" Image Loaded Correctly!", icon="✅")
                 _,  img_preview, _ = st.columns([0.5, 1, 0.5])
                 #col.image(final_hair_img, use_column_width=True, width=300)
@@ -408,7 +395,7 @@ def main() :
 
         st.session_state.agent = agent 
 
-        user_query = st.chat_input("Type your message here...")
+        user_query = st.chat_input("Escribe tu mensaje...")
         
         if (user_query is not None and user_query != "") and (chat_with_voice!=True) :
             get_agent_action(user_query)
