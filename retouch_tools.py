@@ -1,7 +1,7 @@
 from requests.exceptions import Timeout
 import streamlit as st
 import requests
-from util import text_to_speech
+from util import text_to_speech, text_to_speech_spanish
 import time
 import base64
 
