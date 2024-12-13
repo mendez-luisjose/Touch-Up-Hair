@@ -6,7 +6,20 @@ import time
 import base64
 
 API_URL_ENDPOINT = st.secrets["API_URL_ENDPOINT"]
+API_TRANSLATION = st.secrets["API_TRANSLATION"]
 
+def get_en_to_es(text) :
+    data = {
+        "text": text,
+        "dest": "es",
+        "src": "en"
+    }
+    
+    resp = requests.post(API_TRANSLATION, json=data)
+
+    translation = resp.json()["trans"]
+
+    return translation
 def autoplay_audio(file_path: str):
     with open(file_path, "rb") as f:
         data = f.read()
@@ -31,7 +44,7 @@ def modify_hair() :
             hex_color_name = st.session_state.hex_color_name
 
             if st.session_state.audio_response :
-                file_path = text_to_speech(f"Editing the hair roots of the given image... Please wait approximately 30 seconds.")
+                file_path = text_to_speech_spanish(f"Editando las raíces del cabello de la imagen dada... Por favor espere aproximadamente 30 segundos.")
                 autoplay_audio(file_path)
 
             bytes_data = st.session_state.img_hair.getvalue()
@@ -43,9 +56,9 @@ def modify_hair() :
             #time.sleep(5)
             #st.session_state.final_img = st.session_state.img_hair
 
-            return "Hair Modified Successfully!"
+            return "¡Cabello modificado con éxito!"
         else :
-            return "Upload an Image!"
+            return "¡Sube una Imagen!"
     except Timeout as e:
         return f"An unexpected Timeout error occurred. {e} Try Again."
     except Exception as e:
@@ -67,7 +80,7 @@ def change_hair_color(hair_color) :
                 hair_color = hex_color_name
 
             if st.session_state.audio_response :
-                file_path = text_to_speech(f"Changing the Hair Color to {hair_color}... Please wait approximately 30 seconds.")
+                file_path = text_to_speech_spanish(f"Cambiando el color del cabello a {get_en_to_es(hair_color)}... Por favor espere aproximadamente 30 segundos.")
                 autoplay_audio(file_path)
 
             bytes_data = st.session_state.img_hair.getvalue()
@@ -80,9 +93,9 @@ def change_hair_color(hair_color) :
 
             #st.session_state.final_img = st.session_state.img_hair
 
-            return "Hair Modified Successfully!"
+            return "¡Cabello modificado con éxito!"
         else :
-            return "Upload an Image!"
+            return "¡Sube una Imagen!"
     except Timeout as e:
         return f"An unexpected Timeout error occurred. {e} Try Again."
     except Exception as e:
@@ -104,7 +117,7 @@ def change_hair_color_with_hexcode() :
                 hair_color = hex_color_name
 
                 if st.session_state.audio_response :
-                    file_path = text_to_speech(f"Changing the Hair Color to {hair_color}... Please wait approximately 30 seconds.")
+                    file_path = text_to_speech_spanish(f"Cambiando el color del cabello a {get_en_to_es(hair_color)}... Por favor espere aproximadamente 30 segundos.")
                     autoplay_audio(file_path)
 
                 bytes_data = st.session_state.img_hair.getvalue()
@@ -117,9 +130,9 @@ def change_hair_color_with_hexcode() :
 
             #st.session_state.final_img = st.session_state.img_hair
 
-                return "Hair Modified Successfully!"
+                return "¡Cabello modificado con éxito!"
         else :
-            return "Upload an Image!"
+            return "¡Sube una Imagen!"
     except Timeout as e:
         return f"An unexpected Timeout error occurred. {e} Try Again."
     except Exception as e:
@@ -141,7 +154,7 @@ def change_hair_style(hair_style) :
             hex_color_name = st.session_state.hex_color_name
 
             if st.session_state.audio_response :
-                file_path = text_to_speech(f"Changing the hair style of the given image... Please wait approximately 30 seconds.")
+                file_path = text_to_speech_spanish(f"Cambiando el estilo de cabello de la imagen dada... Por favor espere aproximadamente 30 segundos.")
                 autoplay_audio(file_path)
 
             bytes_data = st.session_state.img_hair.getvalue()
@@ -153,9 +166,9 @@ def change_hair_style(hair_style) :
             #time.sleep(5)
             #st.session_state.final_img = st.session_state.img_hair
 
-            return "Hair Modified Successfully!"
+            return "¡Cabello modificado con éxito!"
         else :
-            return "Upload an Image!"
+            return "¡Sube una Imagen!"
     except Timeout as e:
         return f"An unexpected Timeout error occurred. {e} Try Again."
     except Exception as e:
